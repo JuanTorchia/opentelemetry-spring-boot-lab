@@ -74,7 +74,7 @@ El p99 de `baseline` tuvo un outlier local alto en esta corrida. Usarlo como adv
 ## Repo, commit y tag final
 
 - Repo: `https://github.com/JuanTorchia/opentelemetry-spring-boot-lab`
-- Commit: completar despues del push.
+- Commit: usar `git rev-parse editorial-final` para resolver el commit exacto del tag publicado.
 - Tag: `editorial-final`
 
 ## Limitaciones
