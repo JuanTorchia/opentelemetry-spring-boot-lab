@@ -60,22 +60,23 @@ Responder con precision: el experimento no prueba superioridad universal de trac
 
 Corrida editorial local: `2026-05-16T00:00:34`, dataset `editorial`, 3 runs, 200 requests por escenario por run, concurrencia 8.
 
-| scenario | avg_ms | p95_ms | spans_avg | db_spans_avg | downstream_spans_avg | error_spans |
-|---|---:|---:|---:|---:|---:|---:|
-| baseline | 86 | 120 | 3.05 | 1.05 | 0 | 0 |
-| downstream-slow | 351 | 398 | 4 | 0 | 3 | 0 |
-| mixed | 370 | 417 | 7.54 | 1.54 | 2 | 0 |
-| n-plus-one | 137 | 247 | 63.27 | 61.27 | 0 | 0 |
-| optimized | 40 | 79 | 3.06 | 1.06 | 0 | 0 |
-| partial-error | 176 | 237 | 6.28 | 1.28 | 2 | 1800 |
+| scenario | avg_ms | p95_ms | spans_avg | db_spans_avg | downstream_spans_avg | error_spans_total | error_spans_avg |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| baseline | 86 | 120 | 3.05 | 1.05 | 0 | 0 | 0 |
+| downstream-slow | 351 | 398 | 4 | 0 | 3 | 0 | 0 |
+| mixed | 370 | 417 | 7.54 | 1.54 | 2 | 0 | 0 |
+| n-plus-one | 137 | 247 | 63.27 | 61.27 | 0 | 0 | 0 |
+| optimized | 40 | 79 | 3.06 | 1.06 | 0 | 0 | 0 |
+| partial-error | 176 | 237 | 6.28 | 1.28 | 2 | 1800 | 3 |
 
 El p99 de `baseline` tuvo un outlier local alto en esta corrida. Usarlo como advertencia metodologica, no como hallazgo editorial.
+En `partial-error`, `error_spans_total` es el acumulado de toda la corrida. Para narrar el post conviene usar `error_spans_avg`, que expresa la lectura por request.
 
 ## Repo, commit y tag final
 
 - Repo: `https://github.com/JuanTorchia/opentelemetry-spring-boot-lab`
-- Commit: usar `git rev-parse editorial-final` para resolver el commit exacto del tag publicado.
-- Tag: `editorial-final`
+- Commit: `dcfb4ef56b3d99e5266421210294b77be1d61b33`
+- Tag: `editorial-final-jaeger-screenshots`
 
 ## Limitaciones
 
