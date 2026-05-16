@@ -6,6 +6,8 @@ Los logs te dicen que paso. Los traces te muestran donde se fue el tiempo. OpenT
 
 Version sobria para publicar: logs y traces se complementan. El `traceId` y el `spanId` conectan ambos mundos. Un trace no arregla un N+1, lo hace visible.
 
+Tesis final del lab: OpenTelemetry no mejora la performance por si mismo. Mejora la capacidad de diagnosticar por que una request fue lenta, ruidosa o parcialmente fallida. Logs y traces se complementan, pero el trace hace visible la forma causal de la request.
+
 ## Hallazgos defendibles
 
 - El escenario N+1 genera mas spans DB que el optimizado para el mismo resultado de negocio.
@@ -13,6 +15,39 @@ Version sobria para publicar: logs y traces se complementan. El `traceId` y el `
 - El escenario mixto muestra una distribucion por etapas que no aparece en logs planos.
 - El error parcial queda marcado en el trace y se puede correlacionar con logs por `traceId`/`spanId`.
 - La auto-instrumentacion reduce trabajo accidental, pero los spans manuales siguen siendo utiles para explicar negocio.
+
+## Logs vs traces: comparacion de diagnostico
+
+Los logs del lab muestran eventos de aplicacion, `traceId`, `spanId`, escenario, status y duracion total de la request. Son buenos logs operativos: permiten buscar un caso, saber si termino OK o parcialmente fallido, y correlacionarlo con una traza.
+
+Los traces muestran estructura causal: spans HTTP, DB, downstream, transformacion, errores, fan-out y duracion por etapa. La comparacion no busca declarar un ganador universal. Busca mostrar que senales estan disponibles usando solo logs planos y que senales aparecen cuando se mira la traza de la misma request.
+
+La tabla generada en `results/diagnosis-comparison.md` es la fuente para esta comparacion. Usa los mismos escenarios de la corrida editorial y agrega senales derivadas de Jaeger cuando estan disponibles: `dominant_span_type`, `dominant_span_duration_ms`, `dominant_span_share_pct`, `db_span_share_pct` y `downstream_span_share_pct`. Esas metricas ayudan a diagnosticar, pero no miden overhead productivo.
+
+## Que se puede diagnosticar con logs
+
+- Status de la request.
+- Duracion total.
+- Errores explicitos.
+- Correlacion por `traceId`/`spanId`.
+- Eventos de negocio relevantes.
+
+## Que cuesta diagnosticar solo con logs
+
+- Fan-out DB por request sin SQL debug.
+- Distribucion interna del tiempo.
+- Que etapa domino la latencia.
+- Errores parciales dentro de una request exitosa.
+- Causalidad entre DB, downstream y transformacion.
+
+## Que aporta el trace
+
+- Estructura temporal.
+- Jerarquia de spans.
+- Fan-out visible.
+- Duracion por etapa.
+- Errores marcados cerca de su causa.
+- Correlacion con logs.
 
 ## Hallazgos que NO debemos afirmar
 
@@ -30,6 +65,11 @@ Version sobria para publicar: logs y traces se complementan. El `traceId` y el `
 - "Un N+1 tambien se ve con SQL logs." Respuesta: si, pero con logging mas invasivo y peor relacion senal/ruido para una request concreta.
 - "Demasiados spans tambien confunden." Respuesta: de acuerdo; el brief debe mostrar que OTel mal instrumentado puede generar ruido.
 - "Esto no cubre metricas." Respuesta: correcto; el post habla de logs + traces, no de observabilidad completa.
+- "Con buenos logs tambien puedo diagnosticar downstream lento." Respuesta: a veces si. El punto del lab no es negar buenos logs, sino mostrar que el trace separa visualmente tiempo local, downstream y DB sin convertir cada request en logging de bajo nivel.
+- "Si instrumentas mal, los traces son ruido." Respuesta: correcto. El post debe decirlo. Demasiados spans o spans mal nombrados pueden esconder el problema.
+- "El trace no reemplaza metricas." Respuesta: correcto. El trace explica una request concreta; las metricas dicen frecuencia, tendencia e impacto agregado.
+- "Jaeger local no representa produccion." Respuesta: correcto. Jaeger local es una herramienta reproducible para el experimento, no una recomendacion obligatoria de plataforma.
+- "El experimento esta sesgado porque ya sabes los escenarios." Respuesta: correcto parcialmente. La ventaja es que permite comparar senales contra una causa conocida. No prueba que una persona siempre diagnostique mas rapido; prueba que cierta informacion esta o no esta disponible en cada enfoque.
 
 ## Como responderlas
 
@@ -58,25 +98,25 @@ Responder con precision: el experimento no prueba superioridad universal de trac
 
 ## Tabla de resultados principales
 
-Corrida editorial local: `2026-05-16T00:00:34`, dataset `editorial`, 3 runs, 200 requests por escenario por run, concurrencia 8.
+Corrida editorial local: `2026-05-16T02:35:37`, dataset `editorial`, 3 runs, 200 requests por escenario por run, concurrencia 8.
 
 | scenario | avg_ms | p95_ms | spans_avg | db_spans_avg | downstream_spans_avg | error_spans_total | error_spans_avg |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| baseline | 86 | 120 | 3.05 | 1.05 | 0 | 0 | 0 |
-| downstream-slow | 351 | 398 | 4 | 0 | 3 | 0 | 0 |
-| mixed | 370 | 417 | 7.54 | 1.54 | 2 | 0 | 0 |
-| n-plus-one | 137 | 247 | 63.27 | 61.27 | 0 | 0 | 0 |
-| optimized | 40 | 79 | 3.06 | 1.06 | 0 | 0 | 0 |
-| partial-error | 176 | 237 | 6.28 | 1.28 | 2 | 1800 | 3 |
+| baseline | 49 | 96 | 3.06 | 1.06 | 0 | 0 | 0 |
+| downstream-slow | 353 | 402 | 4 | 0 | 3 | 0 | 0 |
+| mixed | 365 | 399 | 7.61 | 1.61 | 2 | 0 | 0 |
+| n-plus-one | 190 | 408 | 63.52 | 61.52 | 0 | 0 | 0 |
+| optimized | 39 | 73 | 3.07 | 1.07 | 0 | 0 | 0 |
+| partial-error | 157 | 190 | 6.32 | 1.32 | 2 | 1800 | 3 |
 
-El p99 de `baseline` tuvo un outlier local alto en esta corrida. Usarlo como advertencia metodologica, no como hallazgo editorial.
+Los percentiles altos pueden moverse por ruido local de Docker/JVM. Usarlos como contexto metodologico, no como hallazgo editorial aislado.
 En `partial-error`, `error_spans_total` es el acumulado de toda la corrida. Para narrar el post conviene usar `error_spans_avg`, que expresa la lectura por request.
 
 ## Repo, commit y tag final
 
 - Repo: `https://github.com/JuanTorchia/opentelemetry-spring-boot-lab`
-- Commit: `dcfb4ef56b3d99e5266421210294b77be1d61b33`
-- Tag: `editorial-final-jaeger-screenshots`
+- Commit: resolver con `git rev-parse editorial-final-diagnosis-comparison`
+- Tag: `editorial-final-diagnosis-comparison`
 
 ## Limitaciones
 
@@ -87,7 +127,8 @@ En `partial-error`, `error_spans_total` es el acumulado de toda la corrida. Para
 - Los SVGs son assets reproducibles; para mostrar UI de Jaeger conviene capturar screenshots reales desde `http://localhost:16686`.
 - Los archivos `results/assets/jaeger-*.png` son capturas reales de Jaeger tomadas desde traces generados por el lab.
 - Los archivos `results/assets/trace-*.svg` son assets sinteticos reproducibles; usarlos como apoyo visual, no como evidencia de UI.
-- En `partial-error`, `error_span_count` / `error_spans_total` es total acumulado de la corrida. Para lectura por request usar `error_spans_avg`.
+- En `partial-error`, `error_spans_total` es total acumulado de la corrida. Para lectura por request usar `error_spans_avg`.
+- `results/diagnosis-comparison.md` compara senales disponibles para diagnostico con logs planos y con traces. No debe presentarse como prueba de que traces siempre son mejores.
 
 ## Que cambiar del draft original
 

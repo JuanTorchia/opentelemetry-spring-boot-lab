@@ -68,7 +68,7 @@
 - `.\scripts\run-lab.ps1 -Mode smoke -Size small`
 - `.\scripts\run-lab.ps1 -Mode editorial -Size editorial -Runs 3 -Requests 200 -Warmup 20 -Concurrency 8`
 - secret scan with `rg`
-- git init, commit, remote push, tag `editorial-final`
+- git init, commit, remote push, final editorial tag selected after validation
 
 - [ ] Run required verification commands.
 - [ ] Fix failures.

@@ -4,6 +4,8 @@ Laboratorio reproducible para convertir una tesis editorial sobre logs y traces 
 
 Tesis: los logs dicen que paso; los traces muestran donde se fue el tiempo. OpenTelemetry no decora dashboards: ayuda a explicar una request lenta cuando DB, downstream, pool, errores y N+1 aparecen mezclados.
 
+Tag recomendado para citar el experimento: `editorial-final-diagnosis-comparison`.
+
 ## Stack
 
 - Spring Boot 3
@@ -62,6 +64,8 @@ Esto levanta Docker Compose, descarga el OpenTelemetry Java Agent en `tools/`, e
 .\scripts\run-lab.ps1 -Mode editorial -Size editorial -Runs 3 -Requests 200 -Warmup 20 -Concurrency 8
 ```
 
+Esta es la matriz editorial principal. Ejecuta `baseline`, `optimized`, `n-plus-one`, `downstream-slow`, `mixed` y `partial-error` contra el dataset de 50k tasks, consulta Jaeger por `traceId` y regenera los reportes comparativos.
+
 Bash, si tenes `pwsh` instalado:
 
 ```bash
@@ -105,6 +109,8 @@ El runner regenera:
 
 - `results/comparison.csv`
 - `results/comparison.md`
+- `results/diagnosis-comparison.csv`
+- `results/diagnosis-comparison.md`
 - `results/assets/trace-n-plus-one.svg`
 - `results/assets/trace-optimized.svg`
 - `results/assets/trace-downstream-slow.svg`
@@ -116,6 +122,10 @@ El runner regenera:
 - `results/assets/jaeger-partial-error.png`
 
 Los raw results quedan en `results/raw/` y estan ignorados por Git para no versionar archivos pesados.
+
+`results/comparison.md` resume latencia, conteos de spans y errores por escenario. `results/diagnosis-comparison.md` compara que puede inferirse con logs planos frente a que aparece en traces: senales disponibles, causa probable, confianza diagnostica y metricas derivadas de spans como `dominant_span_type`, `db_span_share_pct` y `downstream_span_share_pct`.
+
+Los logs son intencionalmente utiles pero no tramposos: incluyen `traceId`, `spanId`, escenario, status y duracion total, pero no imprimen SQL debug ni dicen artificialmente que un escenario es N+1.
 
 ## Regenerar assets
 
