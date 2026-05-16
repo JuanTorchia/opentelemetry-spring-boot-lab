@@ -84,6 +84,9 @@ El p99 de `baseline` tuvo un outlier local alto en esta corrida. Usarlo como adv
 - PowerShell runner suficiente para evidencia editorial, no equivalente a k6/JMeter.
 - Resultados dependen del hardware local, estado de Docker Desktop y JVM.
 - Los SVGs son assets reproducibles; para mostrar UI de Jaeger conviene capturar screenshots reales desde `http://localhost:16686`.
+- Los archivos `results/assets/jaeger-*.png` son capturas reales de Jaeger tomadas desde traces generados por el lab.
+- Los archivos `results/assets/trace-*.svg` son assets sinteticos reproducibles; usarlos como apoyo visual, no como evidencia de UI.
+- En `partial-error`, `error_span_count` / `error_spans_total` es total acumulado de la corrida. Para lectura por request usar `error_spans_avg`.
 
 ## Que cambiar del draft original
 

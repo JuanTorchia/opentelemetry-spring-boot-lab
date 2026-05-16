@@ -110,6 +110,10 @@ El runner regenera:
 - `results/assets/trace-downstream-slow.svg`
 - `results/assets/span-count-by-scenario.svg`
 - `results/assets/p95-by-scenario.svg`
+- `results/assets/jaeger-n-plus-one.png`
+- `results/assets/jaeger-optimized.png`
+- `results/assets/jaeger-downstream-slow.png`
+- `results/assets/jaeger-partial-error.png`
 
 Los raw results quedan en `results/raw/` y estan ignorados por Git para no versionar archivos pesados.
 
@@ -123,7 +127,7 @@ Los assets se regeneran como parte del runner. Para capturas reales de Jaeger:
 4. Abri un trace por escenario.
 5. Guarda screenshot junto a los SVGs en `results/assets/`.
 
-Los SVGs incluidos sirven como assets editoriales reproducibles, no como reemplazo de screenshots de Jaeger cuando se quiera mostrar la UI real.
+Los SVGs incluidos sirven como assets editoriales reproducibles, no como reemplazo de screenshots de Jaeger cuando se quiera mostrar la UI real. Las PNG `jaeger-*.png` son capturas reales de Jaeger tomadas desde traces generados por este lab.
 
 ## Validaciones
 

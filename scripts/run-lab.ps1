@@ -141,6 +141,7 @@ function Summarize($Rows) {
             db_span_count_avg = [Math]::Round(($group | Measure-Object db_span_count -Average).Average, 2)
             downstream_span_count_avg = [Math]::Round(($group | Measure-Object downstream_span_count -Average).Average, 2)
             error_span_count = [int]($group | Measure-Object error_span_count -Sum).Sum
+            error_spans_avg = [Math]::Round(($group | Measure-Object error_span_count -Average).Average, 2)
             log_lines_per_request_avg = [Math]::Round(($group | Measure-Object log_lines -Average).Average, 2)
             interpretation = Interpret $_.Name
         }
@@ -165,10 +166,10 @@ function Write-ComparisonMarkdown($Summary, $Path) {
     $lines += ""
     $lines += "## Summary"
     $lines += ""
-    $lines += "| scenario | avg_ms | p95_ms | spans_avg | db_spans_avg | downstream_spans_avg | error_spans | interpretation |"
-    $lines += "|---|---:|---:|---:|---:|---:|---:|---|"
+    $lines += "| scenario | avg_ms | p95_ms | spans_avg | db_spans_avg | downstream_spans_avg | error_spans_total | error_spans_avg | interpretation |"
+    $lines += "|---|---:|---:|---:|---:|---:|---:|---:|---|"
     foreach ($row in $Summary) {
-        $lines += "| $($row.scenario) | $($row.avg_ms) | $($row.p95_ms) | $($row.trace_span_count_avg) | $($row.db_span_count_avg) | $($row.downstream_span_count_avg) | $($row.error_span_count) | $($row.interpretation) |"
+        $lines += "| $($row.scenario) | $($row.avg_ms) | $($row.p95_ms) | $($row.trace_span_count_avg) | $($row.db_span_count_avg) | $($row.downstream_span_count_avg) | $($row.error_span_count) | $($row.error_spans_avg) | $($row.interpretation) |"
     }
     $lines += ""
     $lines += "## What traces showed that logs did not make obvious"
@@ -177,6 +178,7 @@ function Write-ComparisonMarkdown($Summary, $Path) {
     $lines += "- The downstream scenario isolates HTTP wait time from local DB time."
     $lines += "- The mixed scenario separates DB, downstream and transformation spans, which makes flat request logs less ambiguous."
     $lines += "- The partial error keeps the request controlled while marking the downstream failure in the trace and correlating logs via traceId/spanId."
+    $lines += "- In `partial-error`, `error_spans_total` is a total across all measured requests; use `error_spans_avg` for per-request reading."
     $lines += ""
     $lines += "## What this lab does not prove"
     $lines += ""
