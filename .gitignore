@@ -1,0 +1,9 @@
+target/
+logs/
+tools/
+results/raw/
+.idea/
+.vscode/
+*.log
+*.tmp
+hs_err_pid*

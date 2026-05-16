@@ -1,0 +1,14 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='960' height='330' viewBox='0 0 960 330'>
+<rect width='100%' height='100%' fill='#f8fafc'/>
+<text x='36' y='38' font-family='Arial' font-size='24' font-weight='700' fill='#111827'>N+1 trace shape</text>
+<text x='42' y='102' font-family='Arial' font-size='14' fill='#111827'>HTTP server</text>
+<rect x='220' y='80' width='620' height='28' rx='4' fill='#334155'/>
+<text x='228' y='99' font-family='Arial' font-size='12' fill='white'>request</text>
+<text x='42' y='150' font-family='Arial' font-size='14' fill='#111827'>Business span</text>
+<rect x='260' y='128' width='560' height='28' rx='4' fill='#7c3aed'/>
+<text x='268' y='147' font-family='Arial' font-size='12' fill='white'>load tasks then comments</text>
+<text x='42' y='198' font-family='Arial' font-size='14' fill='#111827'>DB fan-out</text>
+<rect x='300' y='176' width='420' height='28' rx='4' fill='#dc2626'/>
+<text x='308' y='195' font-family='Arial' font-size='12' fill='white'>many repeated comment queries</text>
+<text x='42' y='300' font-family='Arial' font-size='13' fill='#475569'>Synthetic trace asset generated from the lab scenario model; use Jaeger UI for live trace screenshots.</text>
+</svg>

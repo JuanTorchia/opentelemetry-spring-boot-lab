@@ -1,0 +1,38 @@
+# OpenTelemetry Spring Boot Lab - Comparison
+
+Generated: 2026-05-16T00:00:34
+
+## Environment
+
+- Mode: editorial
+- Dataset: editorial
+- Runs: 3
+- Requests per scenario per run: 200
+- Warmup requests per scenario: 20
+- Requested concurrency: 8
+- Backend: Spring Boot 3, Java 21 target, PostgreSQL 16, Jaeger all-in-one
+
+## Summary
+
+| scenario | avg_ms | p95_ms | spans_avg | db_spans_avg | downstream_spans_avg | error_spans | interpretation |
+|---|---:|---:|---:|---:|---:|---:|---|
+| baseline | 86 | 120 | 3.05 | 1.05 | 0 | 0 | Logs confirm OK; trace shows a compact request with limited DB work. |
+| downstream-slow | 351 | 398 | 4 | 0 | 3 | 0 | Time is dominated by HTTP/downstream, not Postgres. |
+| mixed | 370 | 417 | 7.54 | 1.54 | 2 | 0 | Trace splits DB, downstream and transform time; logs are less explanatory. |
+| n-plus-one | 137 | 247 | 63.27 | 61.27 | 0 | 0 | Trace exposes DB fan-out: many DB spans for one business request. |
+| optimized | 40 | 79 | 3.06 | 1.06 | 0 | 0 | Same business shape with fewer DB spans after join/aggregation. |
+| partial-error | 176 | 237 | 6.28 | 1.28 | 2 | 1800 | Trace marks controlled downstream error and logs carry traceId/spanId. |
+
+## What traces showed that logs did not make obvious
+
+- N+1 appears as DB span fan-out inside one request, without enabling noisy SQL logs.
+- The downstream scenario isolates HTTP wait time from local DB time.
+- The mixed scenario separates DB, downstream and transformation spans, which makes flat request logs less ambiguous.
+- The partial error keeps the request controlled while marking the downstream failure in the trace and correlating logs via traceId/spanId.
+
+## What this lab does not prove
+
+- It does not measure production overhead.
+- It does not prove Jaeger is mandatory; Jaeger is used because it is simple for a local lab.
+- It does not claim traces replace logs.
+- It does not claim tracing fixes performance; it makes the shape of latency visible.

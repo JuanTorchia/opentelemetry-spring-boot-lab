@@ -1,0 +1,7 @@
+"scenario","mode","total_requests","successful_requests","error_rate","avg_ms","p50_ms","p95_ms","p99_ms","trace_span_count_avg","db_span_count_avg","downstream_span_count_avg","error_span_count","log_lines_per_request_avg","interpretation"
+"baseline","editorial","600","600","0","86","40","120","1392","3.05","1.05","0","0","2","Logs confirm OK; trace shows a compact request with limited DB work."
+"downstream-slow","editorial","600","600","0","351","346","398","418","4","0","3","0","2","Time is dominated by HTTP/downstream, not Postgres."
+"mixed","editorial","600","600","0","370","362","417","466","7.54","1.54","2","0","2","Trace splits DB, downstream and transform time; logs are less explanatory."
+"n-plus-one","editorial","600","600","0","137","117","247","451","63.27","61.27","0","0","2","Trace exposes DB fan-out: many DB spans for one business request."
+"optimized","editorial","600","600","0","40","33","79","131","3.06","1.06","0","0","2","Same business shape with fewer DB spans after join/aggregation."
+"partial-error","editorial","600","600","0","176","163","237","342","6.28","1.28","2","1800","2","Trace marks controlled downstream error and logs carry traceId/spanId."

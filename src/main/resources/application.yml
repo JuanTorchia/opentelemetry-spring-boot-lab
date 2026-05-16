@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: otel-spring-boot-lab
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:65432/otel_lab?options=-c%20TimeZone=UTC}
+    username: ${SPRING_DATASOURCE_USERNAME:otel}
+    password: ${SPRING_DATASOURCE_PASSWORD:otel}
+    hikari:
+      maximum-pool-size: ${LAB_DB_POOL_SIZE:8}
+      minimum-idle: 2
+      connection-timeout: 3000
+server:
+  port: ${SERVER_PORT:8080}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+logging:
+  level:
+    root: INFO
+    com.juantorchia.otel.lab: INFO

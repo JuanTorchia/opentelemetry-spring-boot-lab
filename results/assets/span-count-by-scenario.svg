@@ -1,0 +1,22 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='900' height='420' viewBox='0 0 900 420'>
+<rect width='100%' height='100%' fill='#f8fafc'/>
+<text x='40' y='38' font-family='Arial' font-size='24' font-weight='700' fill='#111827'>Average span count by scenario</text>
+<text x='40' y='95' font-family='Arial' font-size='15' fill='#111827'>baseline</text>
+<rect x='180' y='70' width='29' height='38' rx='4' fill='#2563eb'/>
+<text x='219' y='95' font-family='Arial' font-size='15' fill='#111827'>3.05</text>
+<text x='40' y='155' font-family='Arial' font-size='15' fill='#111827'>downstream-slow</text>
+<rect x='180' y='130' width='38' height='38' rx='4' fill='#2563eb'/>
+<text x='228' y='155' font-family='Arial' font-size='15' fill='#111827'>4</text>
+<text x='40' y='215' font-family='Arial' font-size='15' fill='#111827'>mixed</text>
+<rect x='180' y='190' width='72' height='38' rx='4' fill='#2563eb'/>
+<text x='262' y='215' font-family='Arial' font-size='15' fill='#111827'>7.54</text>
+<text x='40' y='275' font-family='Arial' font-size='15' fill='#111827'>n-plus-one</text>
+<rect x='180' y='250' width='600' height='38' rx='4' fill='#2563eb'/>
+<text x='790' y='275' font-family='Arial' font-size='15' fill='#111827'>63.27</text>
+<text x='40' y='335' font-family='Arial' font-size='15' fill='#111827'>optimized</text>
+<rect x='180' y='310' width='29' height='38' rx='4' fill='#2563eb'/>
+<text x='219' y='335' font-family='Arial' font-size='15' fill='#111827'>3.06</text>
+<text x='40' y='395' font-family='Arial' font-size='15' fill='#111827'>partial-error</text>
+<rect x='180' y='370' width='60' height='38' rx='4' fill='#2563eb'/>
+<text x='250' y='395' font-family='Arial' font-size='15' fill='#111827'>6.28</text>
+</svg>
