@@ -22,7 +22,11 @@ Los logs del lab muestran eventos de aplicacion, `traceId`, `spanId`, escenario,
 
 Los traces muestran estructura causal: spans HTTP, DB, downstream, transformacion, errores, fan-out y duracion por etapa. La comparacion no busca declarar un ganador universal. Busca mostrar que senales estan disponibles usando solo logs planos y que senales aparecen cuando se mira la traza de la misma request.
 
-La tabla generada en `results/diagnosis-comparison.md` es la fuente para esta comparacion. Usa los mismos escenarios de la corrida editorial y agrega senales derivadas de Jaeger cuando estan disponibles: `dominant_span_type`, `dominant_span_duration_ms`, `dominant_span_share_pct`, `db_span_share_pct` y `downstream_span_share_pct`. Esas metricas ayudan a diagnosticar, pero no miden overhead productivo.
+La tabla generada en `results/diagnosis-comparison.md` es la fuente para esta comparacion. Usa los mismos escenarios de la corrida editorial y agrega senales derivadas de Jaeger cuando estan disponibles: `dominant_span_type`, `dominant_span_duration_ms`, `duration_denominator_type`, `dominant_span_duration_vs_root_pct`, `db_cumulative_span_duration_vs_root_pct` y `downstream_cumulative_span_duration_vs_root_pct`. Esas metricas ayudan a diagnosticar, pero no miden overhead productivo.
+
+`diagnosis_confidence_*` es una clasificacion editorial basada en senales disponibles, no una metrica medida automaticamente. Usarla para narrar cuanta ambiguedad queda con cada fuente, no como benchmark.
+
+Las metricas `*_vs_root_pct` son porcentajes acumulados de duracion de spans exportados por Jaeger. El denominador se registra en `duration_denominator_type`: `root_span` si las referencias de Jaeger identifican un root unico, `http_request_span` si se usa el span HTTP principal, o `largest_observed_span` si la traza queda ambigua. No son overhead, no son porcentaje exclusivo del tiempo real de la request, y pueden superar 100% cuando hay spans anidados, pares cliente/servidor o solapamiento. Sirven como senal diagnostica, no como medicion exacta de distribucion de tiempo.
 
 ## Que se puede diagnosticar con logs
 
@@ -98,16 +102,16 @@ Responder con precision: el experimento no prueba superioridad universal de trac
 
 ## Tabla de resultados principales
 
-Corrida editorial local: `2026-05-16T02:35:37`, dataset `editorial`, 3 runs, 200 requests por escenario por run, concurrencia 8.
+Corrida editorial local: `2026-05-16T03:10:09`, dataset `editorial`, 3 runs, 200 requests por escenario por run, concurrencia 8.
 
 | scenario | avg_ms | p95_ms | spans_avg | db_spans_avg | downstream_spans_avg | error_spans_total | error_spans_avg |
 |---|---:|---:|---:|---:|---:|---:|---:|
-| baseline | 49 | 96 | 3.06 | 1.06 | 0 | 0 | 0 |
-| downstream-slow | 353 | 402 | 4 | 0 | 3 | 0 | 0 |
-| mixed | 365 | 399 | 7.61 | 1.61 | 2 | 0 | 0 |
-| n-plus-one | 190 | 408 | 63.52 | 61.52 | 0 | 0 | 0 |
-| optimized | 39 | 73 | 3.07 | 1.07 | 0 | 0 | 0 |
-| partial-error | 157 | 190 | 6.32 | 1.32 | 2 | 1800 | 3 |
+| baseline | 36 | 55 | 3.04 | 1.04 | 0 | 0 | 0 |
+| downstream-slow | 342 | 374 | 4 | 0 | 3 | 0 | 0 |
+| mixed | 362 | 395 | 7.57 | 1.57 | 2 | 0 | 0 |
+| n-plus-one | 119 | 209 | 63.38 | 61.38 | 0 | 0 | 0 |
+| optimized | 33 | 59 | 3.04 | 1.04 | 0 | 0 | 0 |
+| partial-error | 153 | 184 | 6.27 | 1.27 | 2 | 1800 | 3 |
 
 Los percentiles altos pueden moverse por ruido local de Docker/JVM. Usarlos como contexto metodologico, no como hallazgo editorial aislado.
 En `partial-error`, `error_spans_total` es el acumulado de toda la corrida. Para narrar el post conviene usar `error_spans_avg`, que expresa la lectura por request.
@@ -115,8 +119,8 @@ En `partial-error`, `error_spans_total` es el acumulado de toda la corrida. Para
 ## Repo, commit y tag final
 
 - Repo: `https://github.com/JuanTorchia/opentelemetry-spring-boot-lab`
-- Commit: resolver con `git rev-parse editorial-final-diagnosis-comparison`
-- Tag: `editorial-final-diagnosis-comparison`
+- Commit: resolver con `git rev-parse editorial-final-diagnosis-comparison-v2`
+- Tag: `editorial-final-diagnosis-comparison-v2`
 
 ## Limitaciones
 

@@ -16,11 +16,44 @@ function Test-LabWorkerDownstreamSpan {
     return ($Span.operationName -like "*downstream*") -or ($path -like "*downstream*")
 }
 
+function Test-LabWorkerChildOfReference {
+    param($Reference)
+    if ($null -eq $Reference) { return $false }
+    $type = $Reference.refType
+    if ([string]::IsNullOrWhiteSpace($type)) { $type = $Reference.referenceType }
+    if ([string]::IsNullOrWhiteSpace($type)) { $type = $Reference.type }
+    return $type -eq "CHILD_OF"
+}
+
+function Get-LabWorkerSpanDurationDenominator {
+    param($Spans)
+    $all = @($Spans)
+    $roots = @($all | Where-Object {
+        @($_.references | Where-Object { Test-LabWorkerChildOfReference -Reference $_ }).Count -eq 0
+    })
+    if ($roots.Count -eq 1) {
+        return @{ span = $roots[0]; type = "root_span" }
+    }
+
+    $requestSpans = @($all | Where-Object {
+        ($_.operationName -like "GET /lab/*") -or
+        ($_.operationName -like "POST /lab/*")
+    } | Sort-Object duration -Descending)
+    if ($requestSpans.Count -gt 0) {
+        return @{ span = $requestSpans[0]; type = "http_request_span" }
+    }
+
+    $largest = @($all | Sort-Object duration -Descending | Select-Object -First 1)
+    return @{ span = $largest[0]; type = "largest_observed_span" }
+}
+
 function Get-LabWorkerEmptyTraceCounts {
     return @{
         trace = 0; db = 0; downstream = 0; error = 0
-        dominant_type = "none"; dominant_duration_ms = 0; dominant_share_pct = 0
-        db_share_pct = 0; downstream_share_pct = 0
+        dominant_type = "none"; dominant_duration_ms = 0; duration_denominator_type = "none"
+        dominant_duration_vs_root_pct = 0
+        db_cumulative_duration_vs_root_pct = 0
+        downstream_cumulative_duration_vs_root_pct = 0
     }
 }
 
@@ -30,8 +63,9 @@ function Get-LabWorkerSpanDiagnostics {
     if ($all.Count -eq 0) {
         return Get-LabWorkerEmptyTraceCounts
     }
-    $rootDurationUs = [double](($all | Measure-Object duration -Maximum).Maximum)
-    if ($rootDurationUs -le 0) { $rootDurationUs = 1 }
+    $denominator = Get-LabWorkerSpanDurationDenominator -Spans $all
+    $denominatorDurationUs = [double]$denominator.span.duration
+    if ($denominatorDurationUs -le 0) { $denominatorDurationUs = 1 }
     $classified = $all | ForEach-Object {
         $type = if (Test-LabWorkerDbSpan $_) {
             "db"
@@ -55,9 +89,10 @@ function Get-LabWorkerSpanDiagnostics {
     return @{
         dominant_type = $dominant[0].type
         dominant_duration_ms = [Math]::Round($dominant[0].duration / 1000.0, 2)
-        dominant_share_pct = [Math]::Round(($dominant[0].duration / $rootDurationUs) * 100.0, 2)
-        db_share_pct = [Math]::Round(($dbDuration / $rootDurationUs) * 100.0, 2)
-        downstream_share_pct = [Math]::Round(($downstreamDuration / $rootDurationUs) * 100.0, 2)
+        duration_denominator_type = $denominator.type
+        dominant_duration_vs_root_pct = [Math]::Round(($dominant[0].duration / $denominatorDurationUs) * 100.0, 2)
+        db_cumulative_duration_vs_root_pct = [Math]::Round(($dbDuration / $denominatorDurationUs) * 100.0, 2)
+        downstream_cumulative_duration_vs_root_pct = [Math]::Round(($downstreamDuration / $denominatorDurationUs) * 100.0, 2)
     }
 }
 
@@ -85,9 +120,10 @@ function Get-LabWorkerTraceCounts {
                 trace = $spans.Count; db = $db; downstream = $downstream; error = $errors
                 dominant_type = $diagnostics.dominant_type
                 dominant_duration_ms = $diagnostics.dominant_duration_ms
-                dominant_share_pct = $diagnostics.dominant_share_pct
-                db_share_pct = $diagnostics.db_share_pct
-                downstream_share_pct = $diagnostics.downstream_share_pct
+                duration_denominator_type = $diagnostics.duration_denominator_type
+                dominant_duration_vs_root_pct = $diagnostics.dominant_duration_vs_root_pct
+                db_cumulative_duration_vs_root_pct = $diagnostics.db_cumulative_duration_vs_root_pct
+                downstream_cumulative_duration_vs_root_pct = $diagnostics.downstream_cumulative_duration_vs_root_pct
             }
         } catch {
             Start-Sleep -Milliseconds 300
@@ -133,9 +169,10 @@ function Invoke-LabWorkerRequest {
         error_span_count = $counts.error
         dominant_span_type = $counts.dominant_type
         dominant_span_duration_ms = $counts.dominant_duration_ms
-        dominant_span_share_pct = $counts.dominant_share_pct
-        db_span_share_pct = $counts.db_share_pct
-        downstream_span_share_pct = $counts.downstream_share_pct
+        duration_denominator_type = $counts.duration_denominator_type
+        dominant_span_duration_vs_root_pct = $counts.dominant_duration_vs_root_pct
+        db_cumulative_span_duration_vs_root_pct = $counts.db_cumulative_duration_vs_root_pct
+        downstream_cumulative_span_duration_vs_root_pct = $counts.downstream_cumulative_duration_vs_root_pct
         log_lines = 3
     }
 }

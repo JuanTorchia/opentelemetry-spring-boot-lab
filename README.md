@@ -4,7 +4,7 @@ Laboratorio reproducible para convertir una tesis editorial sobre logs y traces 
 
 Tesis: los logs dicen que paso; los traces muestran donde se fue el tiempo. OpenTelemetry no decora dashboards: ayuda a explicar una request lenta cuando DB, downstream, pool, errores y N+1 aparecen mezclados.
 
-Tag recomendado para citar el experimento: `editorial-final-diagnosis-comparison`.
+Tag recomendado para citar el experimento: `editorial-final-diagnosis-comparison-v2`.
 
 ## Stack
 
@@ -123,7 +123,9 @@ El runner regenera:
 
 Los raw results quedan en `results/raw/` y estan ignorados por Git para no versionar archivos pesados.
 
-`results/comparison.md` resume latencia, conteos de spans y errores por escenario. `results/diagnosis-comparison.md` compara que puede inferirse con logs planos frente a que aparece en traces: senales disponibles, causa probable, confianza diagnostica y metricas derivadas de spans como `dominant_span_type`, `db_span_share_pct` y `downstream_span_share_pct`.
+`results/comparison.md` resume latencia, conteos de spans y errores por escenario. `results/diagnosis-comparison.md` compara que puede inferirse con logs planos frente a que aparece en traces: senales disponibles, causa probable, confianza diagnostica editorial y metricas derivadas de spans como `dominant_span_type`, `duration_denominator_type`, `db_cumulative_span_duration_vs_root_pct` y `downstream_cumulative_span_duration_vs_root_pct`.
+
+Las metricas `*_vs_root_pct` son porcentajes acumulados de duracion de spans exportados por Jaeger contra el denominador registrado en `duration_denominator_type`. No son overhead, no son distribucion exclusiva del tiempo real de la request y pueden superar 100% cuando hay spans anidados, pares cliente/servidor o solapamiento. Sirven como senal diagnostica, no como medicion exacta de asignacion de tiempo.
 
 Los logs son intencionalmente utiles pero no tramposos: incluyen `traceId`, `spanId`, escenario, status y duracion total, pero no imprimen SQL debug ni dicen artificialmente que un escenario es N+1.
 

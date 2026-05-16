@@ -58,16 +58,48 @@ function Test-DownstreamSpan($Span) {
     return ($Span.operationName -like "*downstream*") -or ($path -like "*downstream*")
 }
 
+function Test-ChildOfReference($Reference) {
+    if ($null -eq $Reference) { return $false }
+    $type = $Reference.refType
+    if ([string]::IsNullOrWhiteSpace($type)) { $type = $Reference.referenceType }
+    if ([string]::IsNullOrWhiteSpace($type)) { $type = $Reference.type }
+    return $type -eq "CHILD_OF"
+}
+
+function Get-SpanDurationDenominator($Spans) {
+    $all = @($Spans)
+    $roots = @($all | Where-Object {
+        @($_.references | Where-Object { Test-ChildOfReference $_ }).Count -eq 0
+    })
+    if ($roots.Count -eq 1) {
+        return @{ span = $roots[0]; type = "root_span" }
+    }
+
+    $requestSpans = @($all | Where-Object {
+        ($_.operationName -like "GET /lab/*") -or
+        ($_.operationName -like "POST /lab/*")
+    } | Sort-Object duration -Descending)
+    if ($requestSpans.Count -gt 0) {
+        return @{ span = $requestSpans[0]; type = "http_request_span" }
+    }
+
+    $largest = @($all | Sort-Object duration -Descending | Select-Object -First 1)
+    return @{ span = $largest[0]; type = "largest_observed_span" }
+}
+
 function Get-SpanDiagnostics($Spans) {
     $all = @($Spans)
     if ($all.Count -eq 0) {
         return @{
-            dominant_type = "none"; dominant_duration_ms = 0; dominant_share_pct = 0
-            db_share_pct = 0; downstream_share_pct = 0
+            dominant_type = "none"; dominant_duration_ms = 0; duration_denominator_type = "none"
+            dominant_duration_vs_root_pct = 0
+            db_cumulative_duration_vs_root_pct = 0
+            downstream_cumulative_duration_vs_root_pct = 0
         }
     }
-    $rootDurationUs = [double](($all | Measure-Object duration -Maximum).Maximum)
-    if ($rootDurationUs -le 0) { $rootDurationUs = 1 }
+    $denominator = Get-SpanDurationDenominator $all
+    $denominatorDurationUs = [double]$denominator.span.duration
+    if ($denominatorDurationUs -le 0) { $denominatorDurationUs = 1 }
     $classified = $all | ForEach-Object {
         $type = if (Test-DbSpan $_) {
             "db"
@@ -91,9 +123,10 @@ function Get-SpanDiagnostics($Spans) {
     return @{
         dominant_type = $dominant[0].type
         dominant_duration_ms = [Math]::Round($dominant[0].duration / 1000.0, 2)
-        dominant_share_pct = [Math]::Round(($dominant[0].duration / $rootDurationUs) * 100.0, 2)
-        db_share_pct = [Math]::Round(($dbDuration / $rootDurationUs) * 100.0, 2)
-        downstream_share_pct = [Math]::Round(($downstreamDuration / $rootDurationUs) * 100.0, 2)
+        duration_denominator_type = $denominator.type
+        dominant_duration_vs_root_pct = [Math]::Round(($dominant[0].duration / $denominatorDurationUs) * 100.0, 2)
+        db_cumulative_duration_vs_root_pct = [Math]::Round(($dbDuration / $denominatorDurationUs) * 100.0, 2)
+        downstream_cumulative_duration_vs_root_pct = [Math]::Round(($downstreamDuration / $denominatorDurationUs) * 100.0, 2)
     }
 }
 
@@ -129,9 +162,10 @@ function Invoke-LabRequest($Scenario, $Path) {
         error_span_count = $counts.error
         dominant_span_type = $counts.dominant_type
         dominant_span_duration_ms = $counts.dominant_duration_ms
-        dominant_span_share_pct = $counts.dominant_share_pct
-        db_span_share_pct = $counts.db_share_pct
-        downstream_span_share_pct = $counts.downstream_share_pct
+        duration_denominator_type = $counts.duration_denominator_type
+        dominant_span_duration_vs_root_pct = $counts.dominant_duration_vs_root_pct
+        db_cumulative_span_duration_vs_root_pct = $counts.db_cumulative_duration_vs_root_pct
+        downstream_cumulative_span_duration_vs_root_pct = $counts.downstream_cumulative_duration_vs_root_pct
         log_lines = 3
     }
 }
@@ -140,8 +174,10 @@ function Get-TraceCounts($TraceId) {
     if ([string]::IsNullOrWhiteSpace($TraceId) -or $TraceId -eq "none") {
         return @{
             trace = 0; db = 0; downstream = 0; error = 0
-            dominant_type = "none"; dominant_duration_ms = 0; dominant_share_pct = 0
-            db_share_pct = 0; downstream_share_pct = 0
+            dominant_type = "none"; dominant_duration_ms = 0; duration_denominator_type = "none"
+            dominant_duration_vs_root_pct = 0
+            db_cumulative_duration_vs_root_pct = 0
+            downstream_cumulative_duration_vs_root_pct = 0
         }
     }
     for ($attempt = 1; $attempt -le 8; $attempt++) {
@@ -163,9 +199,10 @@ function Get-TraceCounts($TraceId) {
                 trace = $spans.Count; db = $db; downstream = $downstream; error = $errors
                 dominant_type = $diagnostics.dominant_type
                 dominant_duration_ms = $diagnostics.dominant_duration_ms
-                dominant_share_pct = $diagnostics.dominant_share_pct
-                db_share_pct = $diagnostics.db_share_pct
-                downstream_share_pct = $diagnostics.downstream_share_pct
+                duration_denominator_type = $diagnostics.duration_denominator_type
+                dominant_duration_vs_root_pct = $diagnostics.dominant_duration_vs_root_pct
+                db_cumulative_duration_vs_root_pct = $diagnostics.db_cumulative_duration_vs_root_pct
+                downstream_cumulative_duration_vs_root_pct = $diagnostics.downstream_cumulative_duration_vs_root_pct
             }
         } catch {
             Start-Sleep -Milliseconds 300
@@ -173,8 +210,10 @@ function Get-TraceCounts($TraceId) {
     }
     return @{
         trace = 0; db = 0; downstream = 0; error = 0
-        dominant_type = "none"; dominant_duration_ms = 0; dominant_share_pct = 0
-        db_share_pct = 0; downstream_share_pct = 0
+        dominant_type = "none"; dominant_duration_ms = 0; duration_denominator_type = "none"
+        dominant_duration_vs_root_pct = 0
+        db_cumulative_duration_vs_root_pct = 0
+        downstream_cumulative_duration_vs_root_pct = 0
     }
 }
 
@@ -301,9 +340,10 @@ function Summarize($Rows) {
             error_spans_avg = [Math]::Round(($group | Measure-Object error_span_count -Average).Average, 2)
             dominant_span_type = Get-DominantValue $group "dominant_span_type"
             dominant_span_duration_ms = [Math]::Round(($group | Measure-Object dominant_span_duration_ms -Average).Average, 2)
-            dominant_span_share_pct = [Math]::Round(($group | Measure-Object dominant_span_share_pct -Average).Average, 2)
-            db_span_share_pct = [Math]::Round(($group | Measure-Object db_span_share_pct -Average).Average, 2)
-            downstream_span_share_pct = [Math]::Round(($group | Measure-Object downstream_span_share_pct -Average).Average, 2)
+            duration_denominator_type = Get-DominantValue $group "duration_denominator_type"
+            dominant_span_duration_vs_root_pct = [Math]::Round(($group | Measure-Object dominant_span_duration_vs_root_pct -Average).Average, 2)
+            db_cumulative_span_duration_vs_root_pct = [Math]::Round(($group | Measure-Object db_cumulative_span_duration_vs_root_pct -Average).Average, 2)
+            downstream_cumulative_span_duration_vs_root_pct = [Math]::Round(($group | Measure-Object downstream_cumulative_span_duration_vs_root_pct -Average).Average, 2)
             log_lines_per_request_avg = [Math]::Round(($group | Measure-Object log_lines -Average).Average, 2)
             interpretation = Interpret $_.Name
         }
@@ -346,7 +386,7 @@ function Write-ComparisonMarkdown($Summary, $Path) {
     $lines += "- The downstream scenario isolates HTTP wait time from local DB time."
     $lines += "- The mixed scenario separates DB, downstream and transformation spans, which makes flat request logs less ambiguous."
     $lines += "- The partial error keeps the request controlled while marking the downstream failure in the trace and correlating logs via traceId/spanId."
-    $lines += "- In `partial-error`, `error_spans_total` is a total across all measured requests; use `error_spans_avg` for per-request reading."
+    $lines += '- In `partial-error`, `error_spans_total` is a total across all measured requests; use `error_spans_avg` for per-request reading.'
     $lines += ""
     $lines += "## What this lab does not prove"
     $lines += ""
@@ -380,9 +420,10 @@ function New-DiagnosisRows($Summary) {
             diagnosis_confidence_trace = $definition.diagnosis_confidence_trace
             dominant_span_type = $_.dominant_span_type
             dominant_span_duration_ms = $_.dominant_span_duration_ms
-            dominant_span_share_pct = $_.dominant_span_share_pct
-            db_span_share_pct = $_.db_span_share_pct
-            downstream_span_share_pct = $_.downstream_span_share_pct
+            duration_denominator_type = $_.duration_denominator_type
+            dominant_span_duration_vs_root_pct = $_.dominant_span_duration_vs_root_pct
+            db_cumulative_span_duration_vs_root_pct = $_.db_cumulative_span_duration_vs_root_pct
+            downstream_cumulative_span_duration_vs_root_pct = $_.downstream_cumulative_span_duration_vs_root_pct
             editorial_takeaway = $definition.editorial_takeaway
         }
     }
@@ -396,17 +437,19 @@ function Write-DiagnosisMarkdown($Rows, $Path) {
     $lines += ""
     $lines += "This table compares available diagnostic signals. It does not declare a universal winner and does not measure production overhead."
     $lines += ""
-    $lines += "| scenario | logs_available_signal | trace_available_signal | likely_root_cause_from_logs | likely_root_cause_from_trace | diagnosis_confidence_logs | diagnosis_confidence_trace | dominant_span_type | dominant_span_duration_ms | dominant_span_share_pct | db_span_share_pct | downstream_span_share_pct | editorial_takeaway |"
-    $lines += "|---|---|---|---|---|---|---|---|---:|---:|---:|---:|---|"
+    $lines += "| scenario | logs_available_signal | trace_available_signal | likely_root_cause_from_logs | likely_root_cause_from_trace | diagnosis_confidence_logs | diagnosis_confidence_trace | dominant_span_type | dominant_span_duration_ms | duration_denominator_type | dominant_span_duration_vs_root_pct | db_cumulative_span_duration_vs_root_pct | downstream_cumulative_span_duration_vs_root_pct | editorial_takeaway |"
+    $lines += "|---|---|---|---|---|---|---|---|---:|---|---:|---:|---:|---|"
     foreach ($row in $Rows) {
-        $lines += "| $($row.scenario) | $($row.logs_available_signal) | $($row.trace_available_signal) | $($row.likely_root_cause_from_logs) | $($row.likely_root_cause_from_trace) | $($row.diagnosis_confidence_logs) | $($row.diagnosis_confidence_trace) | $($row.dominant_span_type) | $($row.dominant_span_duration_ms) | $($row.dominant_span_share_pct) | $($row.db_span_share_pct) | $($row.downstream_span_share_pct) | $($row.editorial_takeaway) |"
+        $lines += "| $($row.scenario) | $($row.logs_available_signal) | $($row.trace_available_signal) | $($row.likely_root_cause_from_logs) | $($row.likely_root_cause_from_trace) | $($row.diagnosis_confidence_logs) | $($row.diagnosis_confidence_trace) | $($row.dominant_span_type) | $($row.dominant_span_duration_ms) | $($row.duration_denominator_type) | $($row.dominant_span_duration_vs_root_pct) | $($row.db_cumulative_span_duration_vs_root_pct) | $($row.downstream_cumulative_span_duration_vs_root_pct) | $($row.editorial_takeaway) |"
     }
     $lines += ""
     $lines += "## Metric notes"
     $lines += ""
-    $lines += "- `dominant_span_type`, `dominant_span_duration_ms`, `dominant_span_share_pct`, `db_span_share_pct` and `downstream_span_share_pct` are derived from Jaeger span durations exported during the run."
-    $lines += "- Share percentages are diagnostic signals from exported spans, not production overhead measurements."
-    $lines += "- Downstream percentages can include local client/server spans because the downstream is simulated inside the same app for reproducibility; cumulative shares can exceed 100% when spans overlap."
+    $lines += '- `diagnosis_confidence_*` is an editorial classification based on available signals, not an automatically measured metric.'
+    $lines += '- `dominant_span_type`, `dominant_span_duration_ms`, `duration_denominator_type`, `dominant_span_duration_vs_root_pct`, `db_cumulative_span_duration_vs_root_pct` and `downstream_cumulative_span_duration_vs_root_pct` are derived from Jaeger span durations exported during the run.'
+    $lines += '- `duration_denominator_type` records how the denominator was selected: `root_span` when Jaeger references identify one clear root, `http_request_span` when the HTTP request span is used, or `largest_observed_span` when the trace is ambiguous.'
+    $lines += '- The `*_vs_root_pct` values are cumulative diagnostic signals from exported spans, not production overhead measurements and not exclusive wall-clock distribution.'
+    $lines += "- Cumulative values can exceed 100% when spans are nested, duplicated as client/server pairs, or overlap. Use them as diagnostic hints, not exact time allocation."
     $lines += '- Logs in this lab include `traceId`, `spanId`, scenario, status and total request duration, but they do not print SQL debug or reveal root causes artificially.'
     Set-Content -Path $Path -Value $lines -Encoding UTF8
 }

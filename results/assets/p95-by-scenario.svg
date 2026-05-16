@@ -2,21 +2,21 @@
 <rect width='100%' height='100%' fill='#f8fafc'/>
 <text x='40' y='38' font-family='Arial' font-size='24' font-weight='700' fill='#111827'>p95 latency by scenario (ms)</text>
 <text x='40' y='95' font-family='Arial' font-size='15' fill='#111827'>baseline</text>
-<rect x='180' y='70' width='141' height='38' rx='4' fill='#059669'/>
-<text x='331' y='95' font-family='Arial' font-size='15' fill='#111827'>96</text>
+<rect x='180' y='70' width='84' height='38' rx='4' fill='#059669'/>
+<text x='274' y='95' font-family='Arial' font-size='15' fill='#111827'>55</text>
 <text x='40' y='155' font-family='Arial' font-size='15' fill='#111827'>downstream-slow</text>
-<rect x='180' y='130' width='591' height='38' rx='4' fill='#059669'/>
-<text x='781' y='155' font-family='Arial' font-size='15' fill='#111827'>402</text>
+<rect x='180' y='130' width='568' height='38' rx='4' fill='#059669'/>
+<text x='758' y='155' font-family='Arial' font-size='15' fill='#111827'>374</text>
 <text x='40' y='215' font-family='Arial' font-size='15' fill='#111827'>mixed</text>
-<rect x='180' y='190' width='587' height='38' rx='4' fill='#059669'/>
-<text x='777' y='215' font-family='Arial' font-size='15' fill='#111827'>399</text>
+<rect x='180' y='190' width='600' height='38' rx='4' fill='#059669'/>
+<text x='790' y='215' font-family='Arial' font-size='15' fill='#111827'>395</text>
 <text x='40' y='275' font-family='Arial' font-size='15' fill='#111827'>n-plus-one</text>
-<rect x='180' y='250' width='600' height='38' rx='4' fill='#059669'/>
-<text x='790' y='275' font-family='Arial' font-size='15' fill='#111827'>408</text>
+<rect x='180' y='250' width='317' height='38' rx='4' fill='#059669'/>
+<text x='507' y='275' font-family='Arial' font-size='15' fill='#111827'>209</text>
 <text x='40' y='335' font-family='Arial' font-size='15' fill='#111827'>optimized</text>
-<rect x='180' y='310' width='107' height='38' rx='4' fill='#059669'/>
-<text x='297' y='335' font-family='Arial' font-size='15' fill='#111827'>73</text>
+<rect x='180' y='310' width='90' height='38' rx='4' fill='#059669'/>
+<text x='280' y='335' font-family='Arial' font-size='15' fill='#111827'>59</text>
 <text x='40' y='395' font-family='Arial' font-size='15' fill='#111827'>partial-error</text>
 <rect x='180' y='370' width='279' height='38' rx='4' fill='#059669'/>
-<text x='469' y='395' font-family='Arial' font-size='15' fill='#111827'>190</text>
+<text x='469' y='395' font-family='Arial' font-size='15' fill='#111827'>184</text>
 </svg>

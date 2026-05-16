@@ -1,6 +1,6 @@
 # OpenTelemetry Spring Boot Lab - Comparison
 
-Generated: 2026-05-16T02:35:37
+Generated: 2026-05-16T03:10:09
 
 ## Environment
 
@@ -16,12 +16,12 @@ Generated: 2026-05-16T02:35:37
 
 | scenario | avg_ms | p95_ms | spans_avg | db_spans_avg | downstream_spans_avg | error_spans_total | error_spans_avg | interpretation |
 |---|---:|---:|---:|---:|---:|---:|---:|---|
-| baseline | 49 | 96 | 3.06 | 1.06 | 0 | 0 | 0 | Logs confirm OK; trace shows a compact request with limited DB work. |
-| downstream-slow | 353 | 402 | 4 | 0 | 3 | 0 | 0 | Time is dominated by HTTP/downstream, not Postgres. |
-| mixed | 365 | 399 | 7.61 | 1.61 | 2 | 0 | 0 | Trace splits DB, downstream and transform time; logs are less explanatory. |
-| n-plus-one | 190 | 408 | 63.52 | 61.52 | 0 | 0 | 0 | Trace exposes DB fan-out: many DB spans for one business request. |
-| optimized | 39 | 73 | 3.07 | 1.07 | 0 | 0 | 0 | Same business shape with fewer DB spans after join/aggregation. |
-| partial-error | 157 | 190 | 6.32 | 1.32 | 2 | 1800 | 3 | Trace marks controlled downstream error and logs carry traceId/spanId. |
+| baseline | 36 | 55 | 3.04 | 1.04 | 0 | 0 | 0 | Logs confirm OK; trace shows a compact request with limited DB work. |
+| downstream-slow | 342 | 374 | 4 | 0 | 3 | 0 | 0 | Time is dominated by HTTP/downstream, not Postgres. |
+| mixed | 362 | 395 | 7.57 | 1.57 | 2 | 0 | 0 | Trace splits DB, downstream and transform time; logs are less explanatory. |
+| n-plus-one | 119 | 209 | 63.38 | 61.38 | 0 | 0 | 0 | Trace exposes DB fan-out: many DB spans for one business request. |
+| optimized | 33 | 59 | 3.04 | 1.04 | 0 | 0 | 0 | Same business shape with fewer DB spans after join/aggregation. |
+| partial-error | 153 | 184 | 6.27 | 1.27 | 2 | 1800 | 3 | Trace marks controlled downstream error and logs carry traceId/spanId. |
 
 ## What traces showed that logs did not make obvious
 
@@ -29,7 +29,7 @@ Generated: 2026-05-16T02:35:37
 - The downstream scenario isolates HTTP wait time from local DB time.
 - The mixed scenario separates DB, downstream and transformation spans, which makes flat request logs less ambiguous.
 - The partial error keeps the request controlled while marking the downstream failure in the trace and correlating logs via traceId/spanId.
-- In partial-error, rror_spans_total is a total across all measured requests; use rror_spans_avg for per-request reading.
+- In `partial-error`, `error_spans_total` is a total across all measured requests; use `error_spans_avg` for per-request reading.
 
 ## What this lab does not prove
 
