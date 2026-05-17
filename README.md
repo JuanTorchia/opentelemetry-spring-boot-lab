@@ -2,6 +2,11 @@
 
 Laboratorio reproducible para convertir una tesis editorial sobre logs y traces en evidencia ejecutable.
 
+Articulo relacionado / Related article:
+
+- Español: [OpenTelemetry en Spring Boot 3: cuando el log dice OK y el trace muestra el problema](https://juanchi.dev/es/blog/opentelemetry-spring-boot-logs-vs-traces-diagnostico)
+- English: [OpenTelemetry on Spring Boot 3: when logs say OK and traces show the problem](https://juanchi.dev/en/blog/opentelemetry-spring-boot-logs-vs-traces-diagnosis)
+
 Tesis: los logs dicen que paso; los traces muestran donde se fue el tiempo. OpenTelemetry no decora dashboards: ayuda a explicar una request lenta cuando DB, downstream, pool, errores y N+1 aparecen mezclados.
 
 Tag recomendado para citar el experimento: `editorial-final-diagnosis-comparison-v2`.
